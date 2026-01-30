@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduGraph | School Epidemic Simulator</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="glass-bg"></div>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="image.png" alt="Okul Logosu" class="logo-img">
+            <h1>EduGraph<br><span>Salgın Simülatörü</span></h1>
+        </div>
+        <nav>
+            <ul class="nav-links">
+                <li class="active" onclick="switchModule('overview')">
+                    <span class="icon">📊</span> Genel Bakış
+                </li>
+                <li onclick="switchModule('social-map')">
+                    <span class="icon">🕸️</span> Sosyal Harita
+                </li>
+                <li onclick="switchModule('simulation')">
+                    <span class="icon">☣️</span> SIR Simülasyonu
+                </li>
+                <li onclick="switchModule('analytics')">
+                    <span class="icon">📈</span> Analizler
+                </li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <p>© 2026 EduGraph Araştırma</p>
+            <p>"Görünmez Sosyal Ağ" üzerine temellenmiştir</p>
+        </div>
+    </aside>
+
+    <main class="content">
+        <!-- Overview Module -->
+        <section id="overview" class="module active">
+            <header>
+                <h2>EduGraph'a Hoş Geldiniz</h2>
+                <p>Okullardaki görünmez sosyal ağları görselleştirerek halk sağlığını modelliyoruz.</p>
+            </header>
+
+            <div class="input-card">
+                <h3>Proje Çıktıları</h3>
+                <p>EduGraph, ham anket verilerini etkileşimli bir sosyal haritaya dönüştürür. Çizge Kuramı (Graph
+                    Theory) kullanarak nüfuzlu öğrencileri belirler ve SIR modelini kullanarak virüslerin akran bağları
+                    üzerinden nasıl yayıldığını simüle eder.</p>
+                <div class="metrics-grid" style="margin-top: 2rem;">
+                    <div class="metric-card">
+                        <label>Modellenen Öğrenci</label>
+                        <span class="metric-val" id="count-nodes">...</span>
+                    </div>
+                    <div class="metric-card">
+                        <label>Belirlenen Arkadaşlık</label>
+                        <span class="metric-val" id="count-edges">...</span>
+                    </div>
+                    <div class="metric-card">
+                        <label>Ort. Sosyal Mesafe</label>
+                        <span class="metric-val">3.8</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-card">
+                <button onclick="switchModule('social-map')">Sosyal Haritayı Keşfet</button>
+                <button class="secondary" onclick="switchModule('simulation')">SIR Simülasyonunu Çalıştır</button>
+            </div>
+        </section>
+
+        <!-- Social Map Module -->
+        <section id="social-map" class="module">
+            <header>
+                <h2>Görünmez Sosyal Ağ</h2>
+                <p>Öğrenci bağlantı grafiği ile etkileşime geçin. Büyük düğümler daha yüksek nüfuzu temsil eder.</p>
+            </header>
+
+            <div class="input-card inline">
+                <div>
+                    <label>Filtreleri Vurgula</label>
+                    <select id="filter-select" onchange="updateGraphView()">
+                        <option value="none">Varsayılan Görünüm</option>
+                        <option value="popularity">Popülerlik (Derece)</option>
+                        <option value="bridges">Köprüler (Arasındalık)</option>
+                        <option value="cliques">Gruplar (Algoritma)</option>
+                    </select>
+                </div>
+                <button class="mini" onclick="resetGraph()">Görünümü Sıfırla</button>
+            </div>
+
+            <div id="graph-container" class="input-card"
+                style="height: 600px; padding: 0; position: relative; overflow: hidden; background: #f1f5f9;">
+                <!-- D3 SVG buraya gelecek -->
+                <div id="node-info"
+                    style="position: absolute; top: 1rem; right: 1rem; background: white; padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border); display: none; z-index: 10;">
+                    <h4 id="node-id">Öğrenci ID</h4>
+                    <p id="node-metrics"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Simulation Module -->
+        <section id="simulation" class="module">
+            <header>
+                <h2>SIR Salgın Simülasyonu</h2>
+                <p>Aşağıdaki grafiğe tıklayarak 'Sıfırıncı Hasta'yı (Patient Zero) belirleyin ve simülasyonu başlatın.
+                </p>
+            </header>
+
+            <div class="comparison-grid">
+                <div class="input-card">
+                    <label>Enfeksiyon Olasılığı (β)</label>
+                    <input type="range" id="beta-slider" min="0" max="1" step="0.05" value="0.3"
+                        oninput="updateSimParams()">
+                    <span id="beta-val">0.30</span>
+                </div>
+                <div class="input-card">
+                    <label>İyileşme Oranı (γ)</label>
+                    <input type="range" id="gamma-slider" min="0" max="1" step="0.05" value="0.1"
+                        oninput="updateSimParams()">
+                    <span id="gamma-val">0.10</span>
+                </div>
+            </div>
+
+            <div class="blockchain-actions">
+                <div class="sim-controls">
+                    <button id="play-btn" onclick="toggleSimulation()">▶ Simülasyonu Başlat</button>
+                    <button class="secondary" onclick="resetSimulation()">🔄 Sıfırla</button>
+                </div>
+                <div class="sim-stats">
+                    <strong>Adım: <span id="sim-step">0</span></strong>
+                    <span style="margin-left: 1rem; color: var(--accent);">● Enfekte: <span
+                            id="count-infected">0</span></span>
+                </div>
+            </div>
+
+            <div id="sim-graph-container" class="input-card" style="height: 500px; padding: 0; background: #0f172a;">
+                <!-- SIR Grafiği buraya gelecek -->
+            </div>
+        </section>
+
+        <!-- Analytics Module -->
+        <section id="analytics" class="module">
+            <header>
+                <h2>Gerçek Zamanlı Analizler</h2>
+                <p>Ağ istatistikleri ve simülasyon sonuçlarının detaylı dökümü.</p>
+            </header>
+
+            <div class="input-card">
+                <canvas id="sir-chart" height="150"></canvas>
+            </div>
+
+            <div class="table-container">
+                <h3>En Nüfuzlu Öğrenciler (Köprüler)</h3>
+                <table id="bridges-table">
+                    <thead>
+                        <tr>
+                            <th>Öğrenci ID</th>
+                            <th>Derece (Arkadaş Sayısı)</th>
+                            <th>Nüfuz Skoru</th>
+                            <th>Risk Seviyesi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JS ile doldurulacak -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
